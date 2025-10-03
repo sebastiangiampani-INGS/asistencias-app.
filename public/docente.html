@@ -1,1 +1,92 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Docentes · Asistencias</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="header">
+        <div id="userbox" class="brand">Asistencias</div>
+        <div><button class="button" onclick="logout()">Salir</button></div>
+      </div>
+      <div id="login">
+        <h1 class="h1">Docentes</h1>
+        <p class="p">Ingresá con tu cuenta de Google institucional para cargar inasistencias.</p>
+        <div id="gbtn"></div>
+      </div>
+      <div id="authed" class="hidden">
+        <h1 class="h1">Cargar inasistencia</h1>
+        <div class="alert" id="msg" style="display:none"></div>
+        <div class="row">
+          <input id="fecha" type="date" class="input" />
+          <input id="alumno" type="email" class="input" placeholder="email del estudiante" />
+          <select id="tipo"></select>
+          <button class="button" id="enviar">Agregar</button>
+        </div>
+        <div class="footer">Tope diario por estudiante: <span class="badge">≤ 1</span></div>
+        <hr />
+        <div>
+          <h3>Ayuda</h3>
+          <ul>
+            <li><b>TARDE</b> = 0.5</li>
+            <li><b>AUSENTE</b> = 1</li>
+            <li><b>AUSENTE_NO_COMPUTABLE</b> = 0</li>
+            <li><b>AUSENTE_ED_FISICA</b> = 0.5</li>
+            <li><b>RETIRO_ANTICIPADO</b> = 0.5</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
 
+  <script src="/common.js"></script>
+  <script>
+    const tiposSelect = document.getElementById('tipo');
+    const fechaInput = document.getElementById('fecha');
+    const alumnoInput = document.getElementById('alumno');
+    const msg = document.getElementById('msg');
+    const enviarBtn = document.getElementById('enviar');
+
+    function showMsg(text, ok=false) {
+      msg.style.display='block';
+      msg.style.borderColor = ok ? '#14532d' : '#7f1d1d';
+      msg.style.background = ok ? '#052e16' : '#1f2937';
+      msg.innerText = text;
+      setTimeout(()=> msg.style.display='none', 4000);
+    }
+
+    async function loadTipos() {
+      const tipos = await fetch('/api/tipos').then(r=>r.json());
+      tiposSelect.innerHTML = '';
+      Object.keys(tipos).forEach(k => {
+        const opt = document.createElement('option');
+        opt.value = k; opt.textContent = `${k} (${tipos[k]})`;
+        tiposSelect.appendChild(opt);
+      });
+    }
+
+    async function onSend() {
+      try {
+        const fecha = fechaInput.value;
+        const estudiante_email = alumnoInput.value.trim().toLowerCase();
+        const tipo = tiposSelect.value;
+        if (!fecha || !estudiante_email) throw new Error('Completá fecha y email');
+        const res = await authFetch('/api/asistencias', { method: 'POST', body: JSON.stringify({ fecha, estudiante_email, tipo }) });
+        showMsg('Guardado ✔ ' + (res.message || ''), true);
+      } catch (e) { showMsg(e.message); }
+    }
+
+    (async function(){
+      await initGoogle(async () => {
+        await loadTipos();
+        fechaInput.valueAsNumber = Date.now() - (new Date().getTimezoneOffset()*60000);
+      });
+      enviarBtn.addEventListener('click', onSend);
+    })();
+  </script>
+</body>
+</html>
