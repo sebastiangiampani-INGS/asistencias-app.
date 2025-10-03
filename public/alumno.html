@@ -1,1 +1,57 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Estudiantes · Asistencias</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="header">
+        <div id="userbox" class="brand">Asistencias</div>
+        <div><button class="button" onclick="logout()">Salir</button></div>
+      </div>
+      <div id="login">
+        <h1 class="h1">Mis inasistencias</h1>
+        <p class="p">Ingresá con tu cuenta institucional para ver tus registros.</p>
+        <div id="gbtn"></div>
+      </div>
+      <div id="authed" class="hidden">
+        <h1 class="h1">Resumen</h1>
+        <div class="row">
+          <div id="total" class="badge">Total: 0</div>
+        </div>
+        <table class="table" id="tabla">
+          <thead>
+            <tr><th>Fecha</th><th>Tipo</th><th>Valor</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
+  <script src="/common.js"></script>
+  <script>
+    const tbody = document.querySelector('#tabla tbody');
+    const totalEl = document.getElementById('total');
+
+    async function loadData() {
+      const data = await authFetch('/api/mis-asistencias');
+      tbody.innerHTML = '';
+      data.items.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${r.fecha}</td><td>${r.tipo}</td><td>${r.valor}</td>`;
+        tbody.appendChild(tr);
+      });
+      totalEl.textContent = 'Total: ' + data.total;
+    }
+
+    (async function(){
+      await initGoogle(loadData);
+    })();
+  </script>
+</body>
+</html>
